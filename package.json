@@ -1,0 +1,12 @@
+{
+  "name": "nostr-deno",
+  "version": "0.1",
+  "description": "Nostr protocol deno library",
+  "main": "index.ts",
+  "author": "Serkan KOCAMAN",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "@noble/secp256k1": "^1.7.0"
+  }
+}
