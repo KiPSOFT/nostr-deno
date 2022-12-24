@@ -1,4 +1,4 @@
-import { Nostr, Relay } from 'https://deno.land/x/nostr_deno@v0.1/nostr.ts';
+import { Nostr, Relay } from 'https://deno.land/x/nostr_deno@v0.1.1/nostr.ts';
 
 const nostr = new Nostr('<Private key>');
 
