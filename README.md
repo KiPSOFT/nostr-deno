@@ -1,4 +1,4 @@
-## Nostr Deno Client
+## Nostr Deno Client Library
 Nostr protocol client library for deno runtime.
 
 Nostr - https://github.com/nostr-protocol/nostr
@@ -20,7 +20,7 @@ Deno - https://deno.land/
 ---
 
 ```javascript
-import { Nostr, Relay } from 'https://deno.land/x/nostr_deno@v0.1/nostr.ts';
+import { Nostr, Relay } from 'https://deno.land/x/nostr_deno@v0.1.1/nostr.ts';
 
 const nostr = new Nostr(<Profile Private Key>);
 
