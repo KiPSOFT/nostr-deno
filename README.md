@@ -20,9 +20,11 @@ Deno - https://deno.land/
 ---
 
 ```javascript
-import { Nostr, Relay } from 'https://deno.land/x/nostr_deno_client/nostr.ts';
+import { Nostr, Relay } from 'https://deno.land/x/nostr_deno_client/mod.ts';
 
-const nostr = new Nostr(<Profile Private Key>);
+const nostr = new Nostr();
+
+nostr.privateKey = '';  // A private key is optional. Only used for sending posts.
 
 nostr.relayList.push({
     name: 'Semisol',

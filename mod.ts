@@ -27465,14 +27465,18 @@ var NostrKind;
 class Nostr extends EventEmitter {
     relayList = [];
     relayInstances = [];
-    privateKey;
+    _privateKey;
     publicKey;
     debugMode = false;
-    constructor(privateKey){
+    constructor(){
         super();
+    }
+    set privateKey(value) {
         const decoder = new TextDecoder();
-        this.privateKey = privateKey;
-        this.publicKey = decoder.decode(encode3(schnorr.getPublicKey(this.privateKey)));
+        if (value) {
+            this._privateKey = value;
+            this.publicKey = decoder.decode(encode3(schnorr.getPublicKey(this._privateKey)));
+        }
     }
     async connect() {
         if (this.relayList.length === 0) {
@@ -27615,6 +27619,9 @@ class Nostr extends EventEmitter {
         return posts;
     }
     async getPosts() {
+        if (!this.publicKey) {
+            throw new Error('You must set a public key for getting your posts.');
+        }
         const filters = {
             kinds: [
                 NostrKind.TEXT_NOTE

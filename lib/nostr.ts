@@ -66,15 +66,20 @@ declare interface Nostr {
 class Nostr extends EventEmitter {
     public relayList: Array<RelayList> = [];
     private relayInstances: Array<Relay> = [];
-    public privateKey: any;
-    private publicKey: any;
+    private _privateKey: any;
+    public publicKey: any;
     public debugMode = false;
 
-    constructor(privateKey: string) {
+    constructor() {
         super();
+    }
+
+    public set privateKey(value: any) {
         const decoder = new TextDecoder();
-        this.privateKey = privateKey;
-        this.publicKey = decoder.decode(mod.encode(secp.schnorr.getPublicKey(this.privateKey)));
+        if (value) {
+            this._privateKey = value;
+            this.publicKey = decoder.decode(mod.encode(secp.schnorr.getPublicKey(this._privateKey)));
+        }
     }
 
     async connect() {
@@ -225,6 +230,9 @@ class Nostr extends EventEmitter {
     }
 
     async getPosts() {
+        if (!this.publicKey) {
+            throw new Error('You must set a public key for getting your posts.');
+        }
         const filters = {
             kinds: [NostrKind.TEXT_NOTE],
             authors: [this.publicKey]
