@@ -20,7 +20,7 @@ Deno - https://deno.land/
 ---
 
 ```javascript
-import { Nostr, Relay } from 'https://deno.land/x/nostr_deno_client@v0.1.4/nostr.ts';
+import { Nostr, Relay } from 'https://deno.land/x/nostr_deno_client/nostr.ts';
 
 const nostr = new Nostr(<Profile Private Key>);
 
