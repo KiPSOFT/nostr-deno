@@ -1,6 +1,6 @@
-import { Nostr, Relay } from 'https://deno.land/x/nostr_deno_client@v0.1.3/nostr.ts';
+import { Nostr, Relay } from 'https://deno.land/x/nostr_deno_client@v0.1.9/mod.ts';
 
-const nostr = new Nostr('<Private key>');
+const nostr = new Nostr();
 
 nostr.relayList.push({
     name: 'Semisol',
@@ -20,6 +20,7 @@ nostr.debugMode = true;
 
 await nostr.connect();
 
+nostr.privateKey = ''; // A private key is optional. Only used for sending posts.
 await nostr.sendTextPost('Hello nostr deno client library.');
 
 const posts = await nostr.getPosts();
