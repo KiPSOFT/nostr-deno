@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
-import EventEmitter from "https://deno.land/x/events/mod.ts";
+import EventEmitter from "https://deno.land/x/events@v1.0.0/mod.ts";
 import Relay, { NostrEvent } from "./relay.ts";
-import * as secp from "https://deno.land/x/secp256k1/mod.ts";
+import * as secp from "https://deno.land/x/secp256k1@1.7.0/mod.ts";
 import * as mod from "https://deno.land/std@0.170.0/encoding/hex.ts";
 
 export enum NostrKind {
