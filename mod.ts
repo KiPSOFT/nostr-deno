@@ -27765,4 +27765,4 @@ class Nostr extends EventEmitter {
         }
     }
 }
-export { Nostr as Nostr, Relay as Relay };
+export { Nostr as Nostr, Relay as Relay, NostrKind as NostrKind };

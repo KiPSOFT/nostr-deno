@@ -1,4 +1,4 @@
-import { Nostr, Relay } from 'https://deno.land/x/nostr_deno_client@v0.2.0/mod.ts';
+import { Nostr, Relay, NostrKind } from 'https://deno.land/x/nostr_deno_client@v0.2.1/mod.ts';
 
 const nostr = new Nostr();
 

@@ -74,5 +74,7 @@ NIP-01, NIP-02, NIP-05, NIP-08, NIP-10, NIP-20
  - [ ] Encrypted DMs.
  - [ ] NIP-05 DNS-based internet identifier checking.
  - [ ] Add user for follow.
- - [ ] Public chat (channels)
+ - [ ] Public chat (channels).
+ - [ ] Hashtag list. NIP-12
+ - [ ] Filter posts with hashtag.
  
