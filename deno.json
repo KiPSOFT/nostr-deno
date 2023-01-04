@@ -1,6 +1,6 @@
 {
     "importMap": "import_map.json",
     "tasks": {
-        "build": "deno bundle --importmap=import_map.json nostr.ts mod.ts"
+        "build": "deno bundle nostr.ts mod.ts"
     }
 }
