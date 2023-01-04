@@ -60,6 +60,7 @@ const feeds = await nostr.globalFeed({
 });
 console.log('Feeds', feeds);
 
+await nostr.disconnect();
 console.log('Finish');
 ```
 

@@ -63,7 +63,7 @@ class Relay {
 
     async disconnect() {
         this.manualClose = true;
-        await this.ws?.close(0);
+        await this.ws?.close(1000);
     }
 
     sendErrorEvent(err: Error) {

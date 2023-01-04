@@ -135,6 +135,10 @@ class Nostr extends EventEmitter {
         return await this.getProfile(publicKey);
     }
 
+    disconnect() {
+        return Promise.all(this.relayInstances.map(relay => relay.disconnect()));
+    }
+
     private async getProfile(publicKey: string): Promise<ProfileInfo> {
         const filters = {
             kinds: [NostrKind.META_DATA],
