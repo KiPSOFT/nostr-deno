@@ -77,4 +77,6 @@ NIP-01, NIP-02, NIP-05, NIP-08, NIP-10, NIP-20
  - [ ] Public chat (channels).
  - [ ] Hashtag list. NIP-12
  - [ ] Filter posts with hashtag.
+ - [ ] CI for deno build.
+ - [ ] Split examples.
  
