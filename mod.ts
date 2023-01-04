@@ -2263,7 +2263,7 @@ class Relay {
     }
     async disconnect() {
         this.manualClose = true;
-        await this.ws?.close(0);
+        await this.ws?.close(1000);
     }
     sendErrorEvent(err) {
         this.nostr.emit('relayError', err, this);
@@ -27524,6 +27524,9 @@ class Nostr extends EventEmitter {
     }
     async getOtherProfile(publicKey) {
         return await this.getProfile(publicKey);
+    }
+    disconnect() {
+        return Promise.all(this.relayInstances.map((relay)=>relay.disconnect()));
     }
     async getProfile(publicKey) {
         const filters = {
