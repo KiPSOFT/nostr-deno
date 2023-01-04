@@ -27708,7 +27708,7 @@ class Nostr extends EventEmitter {
         return this.hexEncode(await sha256(buf));
     }
     async signId(id) {
-        return await await schnorr.sign(id, this.privateKey);
+        return await await schnorr.sign(id, this._privateKey);
     }
     async sendPost(content, rootReference, reference, mention) {
         const event = {

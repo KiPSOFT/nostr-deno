@@ -311,7 +311,7 @@ class Nostr extends EventEmitter {
     }
 
     private async signId(id: string) {
-        return await (await secp.schnorr.sign(id, this.privateKey));
+        return await (await secp.schnorr.sign(id, this._privateKey));
     }
 
     private async sendPost(content: string, rootReference?: string, reference?: string, mention?: string) {
