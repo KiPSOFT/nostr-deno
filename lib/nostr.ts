@@ -65,7 +65,7 @@ declare interface Nostr {
 
 class Nostr extends EventEmitter {
     public relayList: Array<RelayList> = [];
-    private relayInstances: Array<Relay> = [];
+    relayInstances: Array<Relay> = [];
     private _privateKey: any;
     public publicKey: any;
     public debugMode = false;
@@ -125,6 +125,43 @@ class Nostr extends EventEmitter {
             }
         }
         return events;
+    }
+
+    /**
+     * Usage example:
+     * for await (const event of nostr.nostrEvents({
+     *       kinds: [NostrKind.META_DATA],
+     *       authors: [publicKey],
+     *       limit: 1
+     *   })) {
+     *       console.log(event)
+     *   } 
+     * 
+     * @param filters the filters the events must match
+     * @returns an async iterable over the matching events
+     */
+    async * nostrEvents(filters: NostrFilters) {
+        function indexPromise<T>(p: Promise<T>, i: number): Promise<{value: T, i: number}> {
+            return new Promise((resolve, reject) => p.then(r => resolve({value: r, i})).catch(reason => reject({reason, i})))
+        }
+
+        const relayIterators = this.relayInstances.map(r => r.events(filters));
+        const nextPromises = relayIterators.map(i => i.next());
+        const indexedPromises: Array<Promise<{value: IteratorResult<NostrEvent>, i: number}>> = nextPromises.map((p, i) => indexPromise(p,i));
+        while (relayIterators.length > 0) {
+            const indexResult = await Promise.race(indexedPromises);
+            if (indexResult.value.done) {
+                relayIterators.splice(indexResult.i,1);
+                indexedPromises.splice(indexResult.i,1);
+                for (let i = indexResult.i; i < indexedPromises.length; i++) {
+                    indexedPromises[i] = indexedPromises[i].then(r => {r.i--; return r});
+                }
+            } else {
+                yield indexResult.value.value;
+                indexedPromises[indexResult.i] = indexPromise(relayIterators[indexResult.i].next(), indexResult.i);
+            }
+        }
+
     }
 
     async getMyProfile(): Promise<ProfileInfo> {
