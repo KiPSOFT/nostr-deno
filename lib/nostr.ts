@@ -65,7 +65,7 @@ declare interface Nostr {
 
 class Nostr extends EventEmitter {
     public relayList: Array<RelayList> = [];
-    relayInstances: Array<Relay> = [];
+    private relayInstances: Array<Relay> = [];
     private _privateKey: any;
     public publicKey: any;
     public debugMode = false;
