@@ -27542,7 +27542,7 @@ class Nostr extends EventEmitter {
         }
         return events;
     }
-    async *nostrEvents(filters) {
+    async *nostrEvents(filters, unique = false) {
         function indexPromise(p, i) {
             return new Promise((resolve, reject)=>p.then((r)=>resolve({
                         value: r,
@@ -27555,6 +27555,7 @@ class Nostr extends EventEmitter {
         const relayIterators = this.relayInstances.map((r)=>r.events(filters));
         const nextPromises = relayIterators.map((i)=>i.next());
         const indexedPromises = nextPromises.map((p, i)=>indexPromise(p, i));
+        const yieldedEventIds = [];
         while(relayIterators.length > 0){
             const indexResult = await Promise.race(indexedPromises);
             if (indexResult.value.done) {
@@ -27567,7 +27568,12 @@ class Nostr extends EventEmitter {
                     });
                 }
             } else {
-                yield indexResult.value.value;
+                if (!unique || yieldedEventIds.indexOf(indexResult.value.value.id) === -1) {
+                    yield indexResult.value.value;
+                    if (unique) {
+                        yieldedEventIds.push(indexResult.value.value.id);
+                    }
+                }
                 indexedPromises[indexResult.i] = indexPromise(relayIterators[indexResult.i].next(), indexResult.i);
             }
         }
