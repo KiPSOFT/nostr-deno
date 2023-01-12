@@ -20,6 +20,10 @@ nostr.debugMode = true;
 
 await nostr.connect();
 
+for await (const feeds of await nostr.getEventsIterable({ kinds: [NostrKind.TEXT_NOTE], limit: 10 }) ) {
+    console.log(feeds);
+}
+
 nostr.privateKey = ''; // A private key is optional. Only used for sending posts.
 await nostr.sendTextPost('Hello nostr deno client library.');
 

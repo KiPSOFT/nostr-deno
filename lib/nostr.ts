@@ -129,7 +129,7 @@ class Nostr extends EventEmitter {
 
     /**
      * Usage example:
-     * for await (const event of nostr.nostrEvents({
+     * for await (const event of nostr.getEventsIterable({
      *       kinds: [NostrKind.META_DATA],
      *       authors: [publicKey],
      *       limit: 1
@@ -141,7 +141,7 @@ class Nostr extends EventEmitter {
      * @param unique set to true to avoid duplicate results
      * @returns an async iterable over the matching events
      */
-    async * nostrEvents(filters: NostrFilters, unique = false) {
+    async * getEventsIterable(filters: NostrFilters, unique = true) {
         function indexPromise<T>(p: Promise<T>, i: number): Promise<{value: T, i: number}> {
             return new Promise((resolve, reject) => p.then(r => resolve({value: r, i})).catch(reason => reject({reason, i})))
         }
