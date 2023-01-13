@@ -114,22 +114,9 @@ class Nostr extends EventEmitter {
         return events;
     }
 
-    async getEvents(filters: NostrFilters) {
-        const events: Array<NostrEvent> = [];
-        for (const relay of this.relayInstances) {
-            const _events = await relay.subscribePromise(filters);
-            for (const _evnt of _events) {
-                if (!events.find((evnt: NostrEvent) => evnt.id === _evnt.id) && await this.isValidEvent(_evnt)) {
-                    events.push(_evnt);
-                }
-            }
-        }
-        return events;
-    }
-
     /**
      * Usage example:
-     * for await (const event of nostr.getEventsIterable({
+     * for await (const event of nostr.filter({
      *       kinds: [NostrKind.META_DATA],
      *       authors: [publicKey],
      *       limit: 1
@@ -141,31 +128,50 @@ class Nostr extends EventEmitter {
      * @param unique set to true to avoid duplicate results
      * @returns an async iterable over the matching events
      */
-    async * getEventsIterable(filters: NostrFilters, unique = true) {
-        function indexPromise<T>(p: Promise<T>, i: number): Promise<{value: T, i: number}> {
-            return new Promise((resolve, reject) => p.then(r => resolve({value: r, i})).catch(reason => reject({reason, i})))
-        }
-
+    filter(filters: NostrFilters, unique = true) {
         const relayIterators = this.relayInstances.map(r => r.events(filters));
-        const nextPromises = relayIterators.map(i => i.next());
-        const indexedPromises: Array<Promise<{value: IteratorResult<NostrEvent>, i: number}>> = nextPromises.map((p, i) => indexPromise(p,i));
-        const yieldedEventIds = []
-        while (relayIterators.length > 0) {
-            const indexResult = await Promise.race(indexedPromises);
-            if (indexResult.value.done) {
-                relayIterators.splice(indexResult.i,1);
-                indexedPromises.splice(indexResult.i,1);
-                for (let i = indexResult.i; i < indexedPromises.length; i++) {
-                    indexedPromises[i] = indexedPromises[i].then(r => {r.i--; return r});
+        return {
+
+            async collect(): Promise<Array<NostrEvent>> {
+                const events: Array<NostrEvent> = [];
+                for await (const event of this) {
+                    events.push(event);
                 }
-            } else {
-                if (!unique || (yieldedEventIds.indexOf(indexResult.value.value.id) === -1)) {
-                    yield indexResult.value.value;
-                    if (unique) {
-                        yieldedEventIds.push(indexResult.value.value.id)
+                return events;
+            },
+
+            async each(cb: ((event: NostrEvent) => void)): Promise<void> {
+                for await (const event of this) {
+                    cb(event);
+                }
+            },
+
+            async * [Symbol.asyncIterator]() {
+                function indexPromise<T>(p: Promise<T>, i: number): Promise<{value: T, i: number}> {
+                    return new Promise((resolve, reject) => p.then(r => resolve({value: r, i})).catch(reason => reject({reason, i})))
+                }
+
+                const nextPromises = relayIterators.map(i => i.next());
+                const indexedPromises: Array<Promise<{value: IteratorResult<NostrEvent>, i: number}>> = nextPromises.map((p, i) => indexPromise(p,i));
+                const yieldedEventIds = []
+                while (relayIterators.length > 0) {
+                    const indexResult = await Promise.race(indexedPromises);
+                    if (indexResult.value.done) {
+                        relayIterators.splice(indexResult.i,1);
+                        indexedPromises.splice(indexResult.i,1);
+                        for (let i = indexResult.i; i < indexedPromises.length; i++) {
+                            indexedPromises[i] = indexedPromises[i].then(r => {r.i--; return r});
+                        }
+                    } else {
+                        if (!unique || (yieldedEventIds.indexOf(indexResult.value.value.id) === -1)) {
+                            yield indexResult.value.value;
+                            if (unique) {
+                                yieldedEventIds.push(indexResult.value.value.id)
+                            }
+                        }
+                        indexedPromises[indexResult.i] = indexPromise(relayIterators[indexResult.i].next(), indexResult.i);
                     }
                 }
-                indexedPromises[indexResult.i] = indexPromise(relayIterators[indexResult.i].next(), indexResult.i);
             }
         }
 
@@ -269,7 +275,7 @@ class Nostr extends EventEmitter {
             since,
             authors
         } as NostrFilters;
-        const events = await this.getEvents(filters);
+        const events = await this.filter(filters).collect();
         const posts = [] as Array<NostrPost>;
         for (const event of events) {
             posts.push(this.eventToPost(event));
@@ -285,7 +291,7 @@ class Nostr extends EventEmitter {
             kinds: [NostrKind.TEXT_NOTE],
             authors: [this.publicKey]
         } as NostrFilters;
-        const events = await this.getEvents(filters);
+        const events = await this.filter(filters).collect();
         const posts = [] as Array<NostrPost>;
         for (const event of events) {
             posts.push(this.eventToPost(event));
@@ -298,7 +304,7 @@ class Nostr extends EventEmitter {
             kinds: [NostrKind.CONTACTS],
             "#p": [publicKey]
         } as NostrFilters;
-        const events = await this.getEvents(filters);
+        const events = await this.filter(filters).collect();
         const res: Array<string> = [];
         for (const _event of events) {
             res.push(_event.pubkey);
@@ -312,7 +318,7 @@ class Nostr extends EventEmitter {
             kinds: [NostrKind.CONTACTS],
             authors: [publicKey]
         } as NostrFilters;
-        const events = await this.getEvents(filters);
+        const events = await this.filter(filters).collect();
         let createdAt = 0;
         let event;
         for (const _event of events) {

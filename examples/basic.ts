@@ -1,4 +1,5 @@
 import { Nostr, Relay, NostrKind } from 'https://deno.land/x/nostr_deno_client@v0.2.1/mod.ts';
+//import { Nostr, NostrKind } from "../nostr.ts";
 
 const nostr = new Nostr();
 
@@ -20,9 +21,21 @@ nostr.debugMode = true;
 
 await nostr.connect();
 
-for await (const feeds of nostr.getEventsIterable({ kinds: [NostrKind.TEXT_NOTE], limit: 10 }) ) {
-    console.log(feeds);
+const filter = { kinds: [NostrKind.TEXT_NOTE], limit: 10 };
+
+//method 1: for await
+for await (const note of nostr.filter(filter) ) {
+    console.log(note);
 }
+
+//method 2: collect
+const allNotes = await nostr.filter(filter).collect();
+console.log(allNotes);
+
+//method 3: callback
+await nostr.filter(filter).each(note => {
+    console.log(note);
+})
 
 nostr.privateKey = ''; // A private key is optional. Only used for sending posts.
 await nostr.sendTextPost('Hello nostr deno client library.');
