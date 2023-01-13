@@ -20,7 +20,7 @@ nostr.debugMode = true;
 
 await nostr.connect();
 
-for await (const feeds of await nostr.getEventsIterable({ kinds: [NostrKind.TEXT_NOTE], limit: 10 }) ) {
+for await (const feeds of nostr.getEventsIterable({ kinds: [NostrKind.TEXT_NOTE], limit: 10 }) ) {
     console.log(feeds);
 }
 
