@@ -2290,6 +2290,29 @@ class Relay {
         });
         this.ws?.send(data);
     }
+    async *events(filters) {
+        const buffer = [];
+        let waiter = null;
+        this.subscribe(filters, (e, _end)=>{
+            buffer.push(e);
+            if (waiter) {
+                waiter(true);
+            }
+        });
+        while(true){
+            if (buffer.length === 0) {
+                await new Promise((resolve)=>{
+                    waiter = resolve;
+                });
+            }
+            const firstValue = buffer.shift();
+            if (firstValue === null) {
+                return;
+            } else {
+                yield firstValue;
+            }
+        }
+    }
     subscribePromise(filters) {
         return new Promise((resolve, reject)=>{
             const subscribeId = crypto.randomUUID();
@@ -27518,6 +27541,42 @@ class Nostr extends EventEmitter {
             }
         }
         return events;
+    }
+    async *nostrEvents(filters, unique = false) {
+        function indexPromise(p, i) {
+            return new Promise((resolve, reject)=>p.then((r)=>resolve({
+                        value: r,
+                        i
+                    })).catch((reason)=>reject({
+                        reason,
+                        i
+                    })));
+        }
+        const relayIterators = this.relayInstances.map((r)=>r.events(filters));
+        const nextPromises = relayIterators.map((i)=>i.next());
+        const indexedPromises = nextPromises.map((p, i)=>indexPromise(p, i));
+        const yieldedEventIds = [];
+        while(relayIterators.length > 0){
+            const indexResult = await Promise.race(indexedPromises);
+            if (indexResult.value.done) {
+                relayIterators.splice(indexResult.i, 1);
+                indexedPromises.splice(indexResult.i, 1);
+                for(let i = indexResult.i; i < indexedPromises.length; i++){
+                    indexedPromises[i] = indexedPromises[i].then((r)=>{
+                        r.i--;
+                        return r;
+                    });
+                }
+            } else {
+                if (!unique || yieldedEventIds.indexOf(indexResult.value.value.id) === -1) {
+                    yield indexResult.value.value;
+                    if (unique) {
+                        yieldedEventIds.push(indexResult.value.value.id);
+                    }
+                }
+                indexedPromises[indexResult.i] = indexPromise(relayIterators[indexResult.i].next(), indexResult.i);
+            }
+        }
     }
     async getMyProfile() {
         return await this.getProfile(this.publicKey);

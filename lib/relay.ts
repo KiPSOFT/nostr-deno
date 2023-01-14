@@ -66,7 +66,7 @@ class Relay {
         await this.ws?.close(1000);
     }
 
-    sendErrorEvent(err: Error) {
+    sendErrorEvent(err: Error){
         this.nostr.emit('relayError', err, this);
     }
 
@@ -85,8 +85,45 @@ class Relay {
         this.ws?.send(data);
     }
 
+    /**
+     * Usage example:
+     * for await (const event of relay.events({
+     *       kinds: [NostrKind.META_DATA],
+     *       authors: [publicKey],
+     *       limit: 1
+     *   })) {
+     *       console.log(event)
+     *   } 
+     * 
+     * @param filters the filters the events must match
+     * @returns an async iterable over the matching events
+     */
+    public async * events(filters: NostrFilters) {
+        const buffer: Array<NostrEvent|null> = []
+        let waiter: null|((value:unknown) => void) = null
+        this.subscribe(filters, (e: NostrEvent | null, _end: boolean) => {
+            buffer.push(e);
+            if (waiter) {
+                waiter(true);
+            }
+        });
+        while (true) {
+            if (buffer.length === 0) {
+                await new Promise((resolve) => {
+                    waiter = resolve;
+                })
+            }
+            const firstValue = buffer.shift();
+            if (firstValue === null) {
+                return;
+            } else {
+                yield firstValue as NostrEvent;
+            }
+        }
+    }
+
     public subscribePromise(filters: NostrFilters): Promise<Array<NostrEvent>> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const subscribeId = crypto.randomUUID();
             let data: string;
             if (Array.isArray(filters)) {
