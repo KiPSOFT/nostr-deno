@@ -66,7 +66,7 @@ class Relay {
         await this.ws?.close(1000);
     }
 
-    sendErrorEvent(err: Error) {
+    sendErrorEvent(err: Error){
         this.nostr.emit('relayError', err, this);
     }
 
@@ -123,7 +123,7 @@ class Relay {
     }
 
     public subscribePromise(filters: NostrFilters): Promise<Array<NostrEvent>> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const subscribeId = crypto.randomUUID();
             let data: string;
             if (Array.isArray(filters)) {
