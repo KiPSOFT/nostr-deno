@@ -1,3 +1,4 @@
 yarn-err*
 .vscode
 node_modules
+.DS_Store
