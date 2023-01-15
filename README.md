@@ -15,6 +15,10 @@ Deno - https://deno.land/
  - [x] Reply post.
  - [x] Debug mode.
  - [x] Promise-based simple and easy to use.
+ - [x] Encrypted send and receive direc messages.
+ - [x] npub and nsec prefix key support.
+ - [x] Async iterable filters.
+
 
 ### Usage
 ---
@@ -27,8 +31,8 @@ const nostr = new Nostr();
 nostr.privateKey = '';  // A private key is optional. Only used for sending posts.
 
 nostr.relayList.push({
-    name: 'Semisol',
-    url: 'wss://nostr-pub.semisol.dev'
+    name: 'Nostrprotocol',
+    url: 'wss://relay.nostrprotocol.net'
 });
 
 nostr.relayList.push({
@@ -60,6 +64,23 @@ const feeds = await nostr.globalFeed({
 });
 console.log('Feeds', feeds);
 
+//method 1: for await
+console.log('iterable return');
+for await (const note of nostr.filter(filter) ) {
+    console.log(note);
+}
+
+//method 2: collect
+console.log('promise return');
+const allNotes = await nostr.filter(filter).collect();
+console.log(allNotes);
+
+//method 3: callback
+console.log('callback return');
+await nostr.filter(filter).each(note => {
+    console.log(note);
+});
+
 await nostr.disconnect();
 console.log('Finish');
 ```
@@ -67,17 +88,15 @@ console.log('Finish');
 ### Supported NIPs
 ---
 
-NIP-01, NIP-02, NIP-05, NIP-08, NIP-10, NIP-20
+NIP-01, NIP-02, NIP-04 NIP-05, NIP-08, NIP-10, NIP-19 NIP-20
 
 ### Roadmap
 ---
 
- - [ ] Encrypted DMs.
  - [ ] NIP-05 DNS-based internet identifier checking.
  - [ ] Add user for follow.
  - [ ] Public chat (channels).
  - [ ] Hashtag list. NIP-12
  - [ ] Filter posts with hashtag.
  - [ ] CI for deno build.
- - [ ] Split examples.
  

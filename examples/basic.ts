@@ -1,23 +1,18 @@
-import { Nostr, Relay, NostrKind } from 'https://deno.land/x/nostr_deno_client@v0.2.1/mod.ts';
-// import { Nostr, NostrKind } from "../nostr.ts";
+// import { Nostr, Relay, NostrKind } from 'https://deno.land/x/nostr_deno_client@v0.2.1/mod.ts';
+import { Nostr, Relay, NostrKind } from "../nostr.ts";
 
 const nostr = new Nostr();
 
 nostr.relayList.push({
-    name: 'Semisol',
-    url: 'wss://nostr-pub.semisol.dev'
-});
-
-nostr.relayList.push({
-    name: 'Wellorder',
-    url: 'wss://nostr-pub.wellorder.net'
+    name: 'Nostrprotocol',
+    url: 'wss://relay.nostrprotocol.net'
 });
 
 nostr.on('relayConnected', (relay: Relay) => console.log('Relay connected.', relay.name));
 nostr.on('relayError', (err: Error) => console.log('Relay error;', err));
 nostr.on('relayNotice', (notice: string[]) => console.log('Notice', notice));
 
-//nostr.debugMode = true;
+nostr.debugMode = true;
 
 await nostr.connect();
 

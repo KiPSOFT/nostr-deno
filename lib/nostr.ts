@@ -3,12 +3,15 @@ import EventEmitter from "https://deno.land/x/events@v1.0.0/mod.ts";
 import Relay, { NostrEvent } from "./relay.ts";
 import * as secp from "https://deno.land/x/secp256k1@1.7.0/mod.ts";
 import * as mod from "https://deno.land/std@0.170.0/encoding/hex.ts";
+import Message from "./message.ts";
+import { bech32 } from 'https://raw.githubusercontent.com/paulmillr/scure-base/main/mod.ts';
 
 export enum NostrKind {
     META_DATA = 0,
     TEXT_NOTE = 1,
     RECOMMED_SERVER = 2,
-    CONTACTS = 3
+    CONTACTS = 3,
+    DIRECT_MESSAGE = 4
 }
 
 export interface RelayList {
@@ -53,6 +56,13 @@ interface NostrEvents {
     'relayPost': (id: string, status: boolean, errorMessage: string, relay: Relay) => void;
 }
 
+export interface NostrMessage {
+    content: string;
+    sender: string;
+    receiver: string;
+    createdAt: number;
+}
+
 declare interface Nostr {
     on<U extends keyof NostrEvents>(
       event: U, listener: NostrEvents[U]
@@ -67,19 +77,35 @@ class Nostr extends EventEmitter {
     public relayList: Array<RelayList> = [];
     private relayInstances: Array<Relay> = [];
     private _privateKey: any;
-    public publicKey: any;
+    private _publicKey: any;
     public debugMode = false;
 
     constructor() {
         super();
     }
 
-    public set privateKey(value: any) {
+    private getKeyFromNip19(key: string) {
+        const code = bech32.decode(key, 1500);
+        const data = new Uint8Array(bech32.fromWords(code.words));
+        return secp.utils.bytesToHex(data);
+    }
+
+    public set privateKey(value: string) {
+        if (value.substring(0, 4) === 'nsec') {
+            value = this.getKeyFromNip19(value);
+        }
         const decoder = new TextDecoder();
         if (value) {
             this._privateKey = value;
-            this.publicKey = decoder.decode(mod.encode(secp.schnorr.getPublicKey(this._privateKey)));
+            this._publicKey = decoder.decode(mod.encode(secp.schnorr.getPublicKey(this._privateKey)));
         }
+    }
+
+    public set publicKey(value: string) {
+        if (value.substring(0, 4) === 'npub') {
+            value = this.getKeyFromNip19(value);
+        }
+        this._publicKey = value;
     }
 
     async connect() {
@@ -178,7 +204,7 @@ class Nostr extends EventEmitter {
     }
 
     async getMyProfile(): Promise<ProfileInfo> {
-        return await this.getProfile(this.publicKey);
+        return await this.getProfile(this._publicKey);
     }
 
     async getOtherProfile(publicKey: string): Promise<ProfileInfo> {
@@ -284,12 +310,12 @@ class Nostr extends EventEmitter {
     }
 
     async getPosts() {
-        if (!this.publicKey) {
+        if (!this._publicKey) {
             throw new Error('You must set a public key for getting your posts.');
         }
         const filters = {
             kinds: [NostrKind.TEXT_NOTE],
-            authors: [this.publicKey]
+            authors: [this._publicKey]
         } as NostrFilters;
         const events = await this.filter(filters).collect();
         const posts = [] as Array<NostrPost>;
@@ -374,7 +400,7 @@ class Nostr extends EventEmitter {
             created_at: Math.floor(Date.now() / 1000),
             id: '',
             kind: NostrKind.TEXT_NOTE,
-            pubkey: this.publicKey,
+            pubkey: this._publicKey,
             sig: '',
             tags: []
         };
@@ -420,6 +446,62 @@ class Nostr extends EventEmitter {
             console.log('Debug:', ...args);
         }
     }
+
+    public async sendMessage(to: string, message: any) {
+        if (!this._privateKey) {
+            throw new Error('You must set a private key send to the message.');
+        }
+        if (to.substring(0, 4) === 'npub') {
+            to = this.getKeyFromNip19(to);
+        }
+        const encrypted = await Message.encryptMessage(to, message, this._privateKey);
+        const event: NostrEvent = {
+            id: '',
+            created_at: Math.floor(Date.now() / 1000),
+            kind: NostrKind.DIRECT_MESSAGE,
+            pubkey: this._publicKey,
+            tags: [['p', to]],
+            content: encrypted,
+            sig: ''
+        };
+        event.id = await this.calculateId(event);
+        event.sig = new TextDecoder().decode(mod.encode(await this.signId(event.id)));
+        for (const relay of this.relayInstances) {
+            try {
+                await relay.sendEvent(event);
+            } catch (err) {
+                console.error(`Send direct message event error; ${err.message} Relay name; ${relay.name}`);
+            }
+        }
+    }
+
+    public async getMessages(): Promise<NostrMessage[]> {
+        if (!this._privateKey) {
+            throw new Error('You must set a private key send to the message.');
+        }
+        const events = await this.filter({
+            kinds: [NostrKind.DIRECT_MESSAGE],
+            "#p": this._publicKey
+        }).collect();
+        const messages: NostrMessage[] = [];
+        for (const event of events) {
+            const sender= event.tags.find(([k, v]) => k === 'p' && v && v !== '')[1];
+            try {
+                const pubKey = sender === this._publicKey ? event.pubkey : sender;
+                const msg = await Message.decrypt(this._privateKey, pubKey, event.content);
+                messages.push({
+                    content: msg,
+                    sender,
+                    receiver: event.pubkey,
+                    createdAt: event.created_at
+                });
+            } catch (err) {
+                this.log('Decrypt error;', err.message);
+            }
+        }
+        return messages;
+    }
+    
 }
 
 export {

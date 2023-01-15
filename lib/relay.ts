@@ -208,6 +208,7 @@ class Relay {
             this.ws?.send(message);
         });
     }
+
 }
 
 export default Relay;
