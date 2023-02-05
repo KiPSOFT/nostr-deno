@@ -73,6 +73,8 @@ declare interface Nostr {
     ): boolean;
 }
 
+const Bech32MaxSize = 5000;
+
 class Nostr extends EventEmitter {
     public relayList: Array<RelayList> = [];
     private relayInstances: Array<Relay> = [];
@@ -88,6 +90,12 @@ class Nostr extends EventEmitter {
         const code = bech32.decode(key, 1500);
         const data = new Uint8Array(bech32.fromWords(code.words));
         return secp.utils.bytesToHex(data);
+    }
+
+    public getNip19FromKey(key: string) {
+        const data = secp.utils.hexToBytes(key);
+        const words = bech32.toWords(data);
+        return bech32.encode('npub', words, Bech32MaxSize);
     }
 
     public set privateKey(value: string) {

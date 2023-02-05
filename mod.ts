@@ -27895,6 +27895,11 @@ class Nostr extends EventEmitter {
         const data = new Uint8Array(bech32.fromWords(code.words));
         return utils.bytesToHex(data);
     }
+    getNip19FromKey(key) {
+        const data = utils.hexToBytes(key);
+        const words = bech32.toWords(data);
+        return bech32.encode('npub', words, 5000);
+    }
     set privateKey(value) {
         if (value.substring(0, 4) === 'nsec') {
             value = this.getKeyFromNip19(value);

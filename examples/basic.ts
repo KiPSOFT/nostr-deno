@@ -54,4 +54,9 @@ const feeds = await nostr.globalFeed({
 });
 console.log('Feeds', feeds);
 
+console.log(nostr.getNip19FromKey('public key'));
+
+Deno.exit();
+
+
 console.log('Finish');
